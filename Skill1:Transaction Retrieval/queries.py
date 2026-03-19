@@ -1,0 +1,114 @@
+BASE_TRANSACTION_QUERY = """
+SELECT
+    f.FEC_CORTE,
+    f.COD_INTERACCION,
+    f.COD_TIPO_INTERACCION,
+    f.COD_CLIENTE,
+    f.COD_PRODUCTO,
+    f.COD_MONEDA,
+    f.COD_CANAL,
+    f.COD_PAIS,
+    f.COD_COMERCIO,
+    f.MONTO_INTERACCION,
+
+    dti.TIPO_INTERACCION,
+    dti.SUBTIPO_INTERACCION,
+    dti.CATEGORIA_INTERACCION,
+    dti.SUBCATEGORIA_INTERACCION,
+
+    dm.DESCRIPCION_MONEDA,
+
+    dc.CANAL,
+    dc.CATEGORIA_CANAL,
+    dc.SUBCATEGORIA_CANAL,
+
+    dp.PAIS,
+    dp.REGION,
+    dp.CONTINENTE,
+
+    dpr.FEC_APERTURA,
+    dpr.FEC_VENCIMIENTO,
+    dpr.MONTO_INICIAL,
+    dpr.CUOTA_MENSUAL,
+    dpr.TASA_INICIAL,
+    dpr.TIPO_TASA,
+    dpr.PLAZO_DIAS,
+
+    fp.COD_TIPO_PRODUCTO,
+    fp.SALDO_PRODUCTO,
+    fp.MONTO_TRANSACCIONES,
+    fp.CANTIDAD_TRANSACCIONES,
+    fp.TASA_INTERES,
+
+    dtp.NOM_PRODUCTO,
+    dtp.DESC_PRODUCTO,
+    dtp.TIPO_PRODUCTO,
+    dtp.TIPO_PRODUCTO_CORE,
+    dtp.SUBTIPO_PRODUCTO,
+    dtp.TIPO_NECESIDAD,
+    dtp.PRODUCTO_CORE_FLAG,
+    dtp.VERDE_FLAG,
+
+    dco.NOMBRE_COMERCIO,
+    dco.DESCRIPCION_MCC,
+    dco.DESCRIPCION_MCG,
+    dco.ECOMMERCE_FLAG,
+    dco.GRUPO_HUELLA_FLAG,
+    dco.COD_ESTADO AS COD_ESTADO_COMERCIO,
+    dco.CATEGORIA_CONSUMO,
+    dco.TIPO_CONSUMO,
+    dco.COD_MCC,
+    dco.COD_MCG,
+
+    dg.PAIS AS PAIS_CLIENTE,
+    dg.PROVINCIA,
+    dg.CANTON,
+    dg.DISTRITO,
+    dg.DIRECCION_CLIENTE,
+    dg.CODIGO_POSTAL,
+    dg.LATITUD,
+    dg.LONGITUD
+
+FROM gold.FctInteraccionesBeta f
+LEFT JOIN gold.DimTipoInteraccion dti
+    ON f.COD_TIPO_INTERACCION = dti.COD_TIPO_INTERACCION
+LEFT JOIN gold.DimMoneda dm
+    ON f.COD_MONEDA = dm.COD_MONEDA
+LEFT JOIN gold.DimCanal dc
+    ON f.COD_CANAL = dc.COD_CANAL
+LEFT JOIN gold.DimPais dp
+    ON f.COD_PAIS = dp.COD_PAIS
+LEFT JOIN gold.DimProducto dpr
+    ON f.COD_PRODUCTO = dpr.COD_PRODUCTO
+LEFT JOIN gold.FctProductos fp
+    ON f.COD_PRODUCTO = fp.COD_PRODUCTO
+   AND f.COD_CLIENTE = fp.COD_CLIENTE
+   AND f.FEC_CORTE = fp.FEC_CORTE
+LEFT JOIN gold.DimTipoProducto dtp
+    ON fp.COD_TIPO_PRODUCTO = dtp.COD_TIPO_PRODUCTO
+LEFT JOIN gold.DimComercio dco
+    ON f.COD_COMERCIO = dco.COD_COMERCIO
+LEFT JOIN gold.DimGeografico dg
+    ON f.COD_CLIENTE = dg.COD_CLIENTE
+WHERE f.COD_INTERACCION LIKE '%TC_%'
+  AND f.FEC_CORTE >= '2025-12-01'
+"""
+
+GET_TRANSACTION_BY_ID_QUERY = BASE_TRANSACTION_QUERY + """
+  AND f.COD_INTERACCION = :cod_interaccion
+"""
+
+GET_TRANSACTIONS_BY_CUSTOMER_QUERY = BASE_TRANSACTION_QUERY + """
+  AND f.COD_CLIENTE = :cod_cliente
+  AND (:fecha_inicio IS NULL OR f.FEC_CORTE >= :fecha_inicio)
+  AND (:fecha_fin IS NULL OR f.FEC_CORTE <= :fecha_fin)
+ORDER BY f.FEC_CORTE DESC
+"""
+
+GET_SIMILAR_TRANSACTIONS_QUERY = BASE_TRANSACTION_QUERY + """
+  AND f.COD_CLIENTE = :cod_cliente
+  AND (:cod_tipo_interaccion IS NULL OR f.COD_TIPO_INTERACCION = :cod_tipo_interaccion)
+  AND (:fecha_inicio IS NULL OR f.FEC_CORTE >= :fecha_inicio)
+  AND (:fecha_fin IS NULL OR f.FEC_CORTE <= :fecha_fin)
+ORDER BY f.FEC_CORTE DESC
+"""
